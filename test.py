@@ -6,7 +6,6 @@ import torch
 from lightning import Callback, LightningDataModule, LightningModule, Trainer
 from lightning.pytorch.loggers import Logger
 from omegaconf import DictConfig, OmegaConf
-import wandb
 
 from src.utils import (
     RankedLogger,
