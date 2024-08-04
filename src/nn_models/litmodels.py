@@ -4,47 +4,10 @@ from typing import Any, Dict, Tuple
 import lightning as L
 import numpy as np
 import polars as pl
-from timm.optim import AdamW, Nadam, MADGRAD
 import torch
 from torch import nn
 import torch.nn.functional as F
 import wandb
-
-from src.kaggle_metric import score
-from src.settings import TARGET_COLS
-from src.nn_datasets.components.eegdataset import load_eeg_data
-from src.utils.plot_batches import plot_zoomed_batch
-from src.utils.custom import (
-    get_comp_score,
-    val_to_dataframe,
-    test_to_dataframe,
-    correct_means,
-)
-
-
-def cross_entropy(preds, targets, reduction="none"):
-    log_softmax = nn.LogSoftmax(dim=-1)
-    loss = (-targets * log_softmax(preds)).sum(1)
-    if reduction == "none":
-        return loss
-    elif reduction == "mean":
-        return loss.mean()
-
-
-class KLDivLossWithLogits(nn.KLDivLoss):
-    def __init__(self):
-        super().__init__(reduction="none")
-
-    def forward(self, y, t, sample_weight=None):
-        y = nn.functional.log_softmax(y, dim=1)
-        loss = super().forward(y, t)
-        if sample_weight is not None:
-            sample_weight = sample_weight / sample_weight.sum()
-            loss = (loss.sum(dim=1) * sample_weight).sum()
-        else:
-            loss = loss.sum() / y.size(0)
-
-        return loss
 
 
 class LitModel(L.LightningModule):
