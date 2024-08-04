@@ -10,15 +10,17 @@ from torch.utils.data import DataLoader, Dataset
 from src.nn_datasets import components
 
 
-class LitDataModule(LightningDataModule):
+class BaseDataModule(LightningDataModule):
     def __init__(
         self,
+        data_csv: Path,
         train_dataset: Dataset,
         val_dataset: Dataset,
         batch_size: int,
         num_workers: int,
         pin_memory: bool,
         test_batch_size_multiplier: int = 1,
+        test_csv: Path = None,
         test_dataset: Dataset = None,
     ):
         super().__init__()
@@ -32,10 +34,6 @@ class LitDataModule(LightningDataModule):
 
         self.batch_size_per_device = batch_size
 
-    @property
-    def num_classes(self) -> int:
-        return 1
-
     def prepare_data(self) -> None:
         """Download data if needed. Lightning ensures that `self.prepare_data()` is called only
         within a single process on CPU, so you can safely add your downloading logic within. In
@@ -44,7 +42,8 @@ class LitDataModule(LightningDataModule):
 
         Do not use it to assign state (self.x = y).
         """
-        pass
+        self.df = pd.read_csv(self.hparams.data_csv)
+        self.df = self._add_fold_ids(self.df)
 
     def setup(self, stage: Optional[str] = None) -> None:
         """Load data. Set variables: `self.data_train`, `self.data_val`, `self.data_test`.
@@ -67,10 +66,10 @@ class LitDataModule(LightningDataModule):
             )
 
         if stage == "fit" or stage is None:
-            pass
+            self.data_train, self.data_val = self._prepare_data()
 
         if stage == "test" or stage is None:
-            pass
+            self.data_test = self._prepare_test_data()
 
     def train_dataloader(self) -> DataLoader[Any]:
         """Create and return the train dataloader.
@@ -144,11 +143,31 @@ class LitDataModule(LightningDataModule):
 
         :return: A tuple with the training and validation datasets.
         """
-        pass
+        train_df = self.df[self.df["fold"] != self.hparams.fold]
+        val_df = self.df[self.df["fold"] == self.hparams.fold]
+
+        train_dataset = self.data_train(df=train_df)
+        val_dataset = self.data_val(df=val_df)
+        return train_dataset, val_dataset
 
     def _prepare_test_data(self) -> Dataset:
         """Prepare the test data.
 
         :return: The test dataset.
         """
-        pass
+        test_df = pd.read_csv(self.hparams.test_csv)
+        return self.data_test(df=test_df)
+
+    def _add_fold_ids(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Add fold ids to the dataframe.
+
+        :param df: The dataframe to which the fold ids will be added.
+        :return: The dataframe with the fold ids.
+        """
+        cvlist = KFold(
+            n_splits=self.hparams.num_folds, shuffle=True, random_state=42
+        ).split(df)
+        df["fold"] = -1
+        for fold, (train_idx, val_idx) in enumerate(cvlist):
+            df.loc[val_idx, "fold"] = fold
+        return df
