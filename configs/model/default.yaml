@@ -1,10 +1,18 @@
-_target_: src.nn_models.litmodels.LitModel
+_target_: src.nn_models.litmodels.BaseLitModel
+
+model:
+  _target_: timm.models.resnet18
+  pretrained: true
+  num_classes: 3
+
+loss_fn: 
+  _target_: torch.nn.CrossEntropyLoss
 
 optimizer:
-  _target_: timm.optim.MADGRAD
+  _target_: torch.optim.AdamW
   _partial_: true
   lr: 0.003
-  weight_decay: 0.000
+  weight_decay: 0.0001
 
 scheduler:
   _target_: torch.optim.lr_scheduler.OneCycleLR
@@ -16,18 +24,6 @@ scheduler:
   final_div_factor: 100
 
 scheduler_interval: "step"
-
-net:
-  _target_: src.nn_models.basemodels.ConvRNNModel
-  in_channels: 20
-  latent_channels: 32
-  num_outputs: 6
-  kernel_size: 5
-  stride: 1
-  padding: 0
-  dropout: 0.2
-  num_blocks: 2
-
 
 # compile model for faster training with pytorch 2.0
 compile: true

@@ -15,7 +15,7 @@ defaults:
 
   # experiment configs allow for version control of specific hyperparameters
   # e.g. best hyperparameters for given model and datamodule
-  - experiment: clean_effb1
+  - experiment: dummy
 
   # config for hyperparameter optimization
   - hparams_search: null
@@ -44,13 +44,4 @@ train: False
 test: True
 
 # simply provide checkpoint path to resume training
-ckpt_path: "logs/train/multiruns/2024-03-17_17-40-58/8/checkpoints/last.ckpt"
-
-preprocess:
-  _target_: src.nn_datasets.components.eegdataset_clean.Preprocessor
-  low_f: 0.1
-  high_f: 40
-  order: 4
-  scale: simple
-  kind: montage
-  notch: 60
+ckpt_path: ""

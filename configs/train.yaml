@@ -15,7 +15,7 @@ defaults:
 
   # experiment configs allow for version control of specific hyperparameters
   # e.g. best hyperparameters for given model and datamodule
-  - experiment: conv1d_res_optuna
+  - experiment: dummy
 
   # config for hyperparameter optimization
   - hparams_search: null
@@ -50,15 +50,6 @@ seed: null
 
 version: null
 #
-optimized_metric: "val/score"
+optimized_metric: "val/loss"
 
 comment: "none"
-
-preprocess:
-  _target_: src.nn_datasets.components.eegdataset_clean.Preprocessor
-  low_f: 0.1
-  high_f: 40
-  order: 4
-  scale: simple
-  kind: montage
-  notch: 60
